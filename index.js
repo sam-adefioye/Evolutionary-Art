@@ -9,9 +9,8 @@ const PORT = process.env.PORT || 5000
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser());
 app.set('views', path.join(__dirname, 'views'));
-app.engine('html', require('ejs').renderFile);
-// app.set('view engine', 'ejs');
+app.set('view engine', 'ejs');
 
-app.get('/', (req, res) => res.render('index.html'));
+app.get('/', (req, res) => res.render('index'));
 
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`));
