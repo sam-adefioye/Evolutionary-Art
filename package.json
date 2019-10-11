@@ -1,0 +1,30 @@
+{
+  "name": "evoart_stylisation",
+  "version": "1.0.0",
+  "description": "An evolutionary art system that evolves given images using shapes.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": "",
+  "keywords": [
+    "evolutionary",
+    "art"
+  ],
+  "author": "Samuel Adefioye",
+  "license": "",
+  "devDependencies": {
+    "ejs": "^2.5.6",
+    "cookie-parser": "~1.4.3",
+    "express": "^4.15.2",
+    "express-session": "~1.15.6",
+    "body-parser": "~1.18.3"
+  },
+  "dependencies": {
+    "browserify": "^16.5.0",
+    "easytimer": "^1.1.1",
+    "random-normal": "^1.0.0",
+    "rangeslider-js": "^3.2.1",
+    "rangeslider-pure": "^0.4.8"
+  }
+}

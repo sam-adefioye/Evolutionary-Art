@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Evolutionary Art: Artistic Stylisation</title>
+
+    <link rel="stylesheet" href="/stylesheets/index.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/js/evo_bundle.js"></script>
+    <script type="text/javascript" src="/js/easytimer.js"></script>
+  </head>
+  <body style="background-color: #21252b; color: white; text-align: center;">
+    <div class="container-fluid">
+      <div class="row justify-content-center" id="canvas">
+        <div class="col">
+          <p>Result:</p>
+          <canvas id="best" width="320" height="300"></canvas> <!-- The canvas that shall show the evolved image -->
+        </div>
+        <div class="col">
+          <p>Input image:</p>
+          <canvas id="targetimg" width="320" height="300"></canvas> <!-- The canvas that shall show the input image -->
+          <div class="camera">
+            <video id="video">Video stream not available.</video> <!-- The element that shall show the camera -->
+            <button id="capture" type="button" class="btn btn-primary">Take photo</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="infopanel">
+
+        <!-- The drop-down button for shape selection -->
+        <div class="dropdown" id="shapediv">
+          <button class="btn btn-light dropdown-toggle" type="button" id="shape" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Choose shape
+          </button>
+          <div class="dropdown-menu" aria-labelledby="shape">
+            <a class="dropdown-item" id="circle" onclick="shapeChange(this.id)" href="#">Circle</a>
+            <a class="dropdown-item" id="triangle" onclick="shapeChange(this.id)" href="#">Triangle</a>
+            <a class="dropdown-item" id="rectangle" onclick="shapeChange(this.id)" href="#">Rectangle</a>
+            <a class="dropdown-item" id="square" onclick="shapeChange(this.id)" href="#">Square</a>
+          </div>
+        </div>
+
+        <!-- The drop-down button for image selection -->
+        <button class="btn btn-primary" id="chooseimage" type="button" data-toggle="collapse" data-target=".multi-collapse" aria-expanded="false" aria-controls="multiCollapseExample1 multiCollapseExample2">Choose image</button>
+        <div id="imageoptions" class="row justify-content-center">
+          <div class="col">
+            <div class="collapse multi-collapse" id="multiCollapseExample1">
+              <div class="card card-body border border-light" id="imageselect">
+                  <input type="file" accept="image/jpeg, image/png, image/bmp" name="target" id="target" onchange="onChange(event)" onclick="disableCaptureBtn()">
+                </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="collapse multi-collapse" id="multiCollapseExample2">
+              <div class="card card-body border border-primary" id="imagecapture">
+                  <button id="capturemode" type="button" class="btn btn-primary" disabled>
+                      Take a picture <i class="fas fa-camera"></i>
+                  </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Population slider -->
+        <div id="popcontrol">
+          <h6>Number of shapes:</h6>
+          <input type="range" max="1000" min="50" step="50" value="50" id="rangeslider">
+          <p id="output" style="color: white;">50</p>
+        </div>
+
+        <div id="save"></div> <!-- Button used to save image from canvas -->
+
+        <!-- Buttons used to start and restart the program + help popover button -->
+        <div>
+          <button id="start" type="button" class="btn btn-light btn-lg panelbtns" onclick="start()">
+            S T A R T
+          </button>
+          <button id="restart" type="button" class="btn btn-light btn-lg panelbtns" onclick="javascript:location.reload()">
+            R E S T A R T
+          </button>
+          <button type="button" class="btn btn-info" data-toggle="popover" data-content="1. Choose a shape (default: circle.<br/ >2. Choose an image (JPEG, PNG, etc.) OR take a picture.<br/ >3. Select the number of shapes (default: 50). <br/ >4. START!" id="help">
+            <i class="fas fa-question"></i>
+          </button>
+        </div>
+
+        <!-- Section detailing elapsed time and fitness/accuracy score of evolved image -->
+        <div id="evostats" style="display: none;">
+          Fitness/Accuracy score:
+          <span id="fitness">0</span><br/>
+          Elapsed time:
+          <span id="time">00:00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+
+      $(function () {
+        $('[data-toggle="popover"]').popover({html: true})
+      })
+
+      // EVOLUTIONARY ALGORITHM VARIABLES/PARAMETERS
+      var timer = new Timer();
+      var ID = 0;
+      var TARGET_DATA;
+      var SIZE;
+      var FITNESS_BEST = Number.MAX_VALUE;
+      var FITNESS_TEST = 0;
+      var NORM_COEFF = 0;
+      var NORMALISED_FITNESS;
+      var DNA_BEST = [];
+      var DNA_TEST = [];
+      var GEN = 0;
+      var SHAPE = "circle";
+      var SHAPE_COUNT = 50;
+      var changeIndex = 0;
+
+      // IMAGE CAPTURE VARIABLES
+      var width = 320;
+      var height = 0;
+      var video = document.getElementById("video");
+      var canvas = document.createElement("CANVAS");
+      var streaming = false;
+      var capturemode = document.getElementById("capturemode");
+      var takepic = document.getElementById("capture");
+      var photo = document.getElementById("photo");
+      var cameradiv = document.getElementsByClassName("camera")[0];
+
+      // ALGORITHM HTML ELEMENT COUNTERPARTS
+      var slider = document.getElementById("rangeslider");
+      var popsize = document.getElementById("output");
+      var IMAGE = document.createElement("IMG");
+      var TARGET_CANVAS = document.getElementById("targetimg");
+      var TEST_CANVAS = document.createElement("CANVAS");
+      var BEST_CANVAS = document.getElementById('best');
+      var LIVE_FITNESS = document.getElementById("fitness");
+      var ORIGINAL = document.getElementById("targetimg");
+
+      var BEST_CTX = BEST_CANVAS.getContext('2d');
+      var TEST_CTX = TEST_CANVAS.getContext('2d');
+      var TARGET_CTX = TARGET_CANVAS.getContext('2d');
+      var ORIGINAL_CTX = ORIGINAL.getContext('2d');
+
+      timer.addEventListener('secondsUpdated', function (e) {
+        document.getElementById("time").innerHTML = timer.getTimeValues().toString();
+      });
+
+      slider.addEventListener('input', function () {
+        popsize.innerHTML = slider.value;
+        console.log(slider.value);
+      }, false);
+
+      function start() {
+        if(!IMAGE.src) {
+          // Alerts user if they attempt to run program without selecting an input image
+          alert("You have not chosen an image! Please select an image or take a picture.")
+        }
+        else if(confirm("Are you sure this is the image you would like to use?")) {
+          // Resizes an image if it exceeds 320 pixels in width
+          if(IMAGE.width > 320) {
+            SIZE = resizeImage(1);
+          }
+          else if(IMAGE.width > 320 && IMAGE.width < 640){
+            SIZE = resizeImage(2);
+          }
+          else {
+            SIZE = {width: IMAGE.width, height: IMAGE.height};
+            TARGET_CANVAS.width = SIZE.width;
+            TARGET_CANVAS.height = SIZE.height;
+            TARGET_CTX.drawImage(IMAGE, 0, 0, SIZE.width, SIZE.height);
+          }
+
+          SHAPE_COUNT = popsize.innerHTML;
+
+          // Set the width & height of all canvases to the image dimensions
+          TEST_CANVAS.width = SIZE.width;
+          TEST_CANVAS.height = SIZE.height;
+          BEST_CANVAS.width = SIZE.width;
+          BEST_CANVAS.height = SIZE.height;
+          TARGET_DATA = TARGET_CTX.getImageData(0, 0, SIZE.width, SIZE.height).data;
+          NORM_COEFF = SIZE.width * SIZE.height * 3 * 255;
+
+          // Initialised population of both canvases
+          DNA_BEST = evo.initDna(SHAPE, SHAPE_COUNT, SIZE);
+          DNA_TEST = evo.initDna(SHAPE, SHAPE_COUNT, SIZE);
+          for(var j = 0; j < DNA_BEST.length; j++) {
+            evo.passGeneMutation(DNA_BEST, DNA_TEST, SHAPE, j);
+          }
+
+          document.getElementById("evostats").style.display = "block";
+
+          timer.start();
+          ID = setInterval(evolve, 0);
+
+          // Hide buttons upon starting the program
+          var start = document.getElementById("start");
+          var shape = document.getElementById("shapediv");
+          var imageselect = document.getElementById("imageselect");
+          var shapeselect = document.getElementById("shapediv");
+          var imagecapture = document.getElementById("imagecapture");
+          var chooseimage = document.getElementById("chooseimage");
+          var popcontrol = document.getElementById("popcontrol");
+          var restart = document.getElementById("restart");
+          shapeselect.style.display = "none";
+          imageselect.style.display = "none";
+          start.style.display = "none";
+          shape.style.display = "none";
+          imagecapture.style.display = "none";
+          chooseimage.style.display = "none";
+          popcontrol.style.display = "none";
+          restart.style.marginLeft = "2em";
+
+          // Dynamically adds the save button to the page
+          addSaveButton();
+        }
+      }
+
+      // Changes the value of the target image every time a new image is selected
+      function onChange(event) {
+        var file = event.target.files[0];
+        var reader = new FileReader();
+        reader.onload = function(event) {
+          console.log(file.name);
+          IMAGE.src = reader.result;
+        };
+
+        reader.readAsDataURL(file);
+
+        // Set the value of the image button to the name of the image file
+        var imgbtn = document.getElementById("chooseimage");
+        imgbtn.innerHTML = file.name;
+        imgbtn.click();
+      }
+
+      // Set the value of the SHAPE variable & Set the value of the shape button to the shape type
+      function shapeChange(shape_id) {
+        console.log(shape_id);
+        SHAPE = shape_id;
+        document.getElementById("shape").innerHTML = shape_id.charAt(0).toUpperCase() + shape_id.slice(1);
+      }
+
+      function evolve() {
+        changeIndex = evo.mutate(DNA_TEST, SIZE, SHAPE_COUNT, SHAPE);
+        evo.drawDNA(TEST_CTX, DNA_TEST, SHAPE, SIZE);
+        FITNESS_TEST = evo.fitness(TEST_CTX, TARGET_DATA, SIZE);
+
+        if(FITNESS_TEST < FITNESS_BEST) {
+          evo.passGeneMutation(DNA_TEST, DNA_BEST, SHAPE, changeIndex);
+          FITNESS_BEST = FITNESS_TEST;
+          NORMALISED_FITNESS = 100 * (1 - FITNESS_BEST/NORM_COEFF);
+          LIVE_FITNESS.innerHTML = NORMALISED_FITNESS.toFixed(2)+"%";
+
+          GEN++;
+          evo.drawDNA(BEST_CTX, DNA_BEST, SHAPE, SIZE);
+        }
+        else {
+          evo.passGeneMutation(DNA_BEST, DNA_TEST, SHAPE, changeIndex);
+          GEN++;
+        }
+      }
+
+      // Event listener for image capture mode (webcam)
+      capturemode.onclick = function() {
+        BEST_CANVAS.style.display = "none";
+        cameradiv.style.display = "inline-block";
+        document.getElementById("target").disabled = true;
+        setVideoParams();
+
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(function(stream) {
+            video.srcObject = stream;
+            video.play();
+        })
+        .catch(function(err) {
+            console.log("An error occurred! " + err);
+        });
+      };
+
+      // Event listener for camera button
+      takepic.onclick = function() {
+        height = video.videoHeight / (video.videoWidth/width);
+        takepicture();
+        unsetVideoParams();
+        BEST_CANVAS.style.display = "inline-block";
+        cameradiv.style.display = "none";
+        stopStreamedVideo(video);
+        var imgbtn = document.getElementById("chooseimage");
+        imgbtn.innerHTML = "Image captured";
+        imgbtn.click();
+      }
+
+      // Makes the canvas used for image capture blank if dimensions can't be ascertained
+      function clearphoto() {
+        var context = canvas.getContext('2d');
+        context.fillStyle = "#AAA";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        var data = canvas.toDataURL('image/png');
+        IMAGE.setAttribute('src', data);
+      }
+
+      // Captures & parses image taken by webcam
+      function takepicture() {
+        var context = canvas.getContext('2d');
+        if (width && height) {
+          canvas.width = width;
+          canvas.height = height;
+          context.drawImage(video, 0, 0, width, height);
+
+          var data = canvas.toDataURL('image/png');
+          IMAGE.setAttribute('src', data);
+        } else {
+          clearphoto();
+        }
+      }
+
+      function setVideoParams() {
+        video.style.width = "320px";
+        video.style.height = "240px";
+        cameradiv.style.width = "340px";
+      }
+
+      function unsetVideoParams() {
+        video.style.width = "0px";
+        video.style.height = "0px";
+        cameradiv.style.width = "0px";
+      }
+
+      // Stops connection between program and camera once image has been captured
+      function stopStreamedVideo(videoElem) {
+        var stream = videoElem.srcObject;
+        var tracks = stream.getTracks();
+
+        tracks.forEach(function(track) {
+          track.stop();
+        });
+
+        videoElem.srcObject = null;
+      }
+
+      // Adds the save button to the page
+      function addSaveButton() {
+        var link = document.createElement('a');
+        link.innerHTML = 'Save image';
+        link.className = "btn btn-success";
+
+        var icon = document.createElement('i');
+        icon.className = "fa fa-download";
+        icon.style.marginLeft = "0.25em";
+
+        link.appendChild(icon);
+        link.addEventListener('click', function(ev) {
+          link.href = BEST_CANVAS.toDataURL();
+          link.download = "evoart.png";
+        }, false);
+        document.getElementById("save").appendChild(link);
+        document.getElementById("save").style.marginBottom = "1em";
+      }
+
+      // Disables camera button if file browser selected
+      function disableCaptureBtn() {
+        document.getElementById("capturemode").disabled = true;
+      }
+
+      // Resizes image to a factor of the original size and returns an object with target image's dimensions
+      function resizeImage(factor) {
+        // Set size proportional to image
+        BEST_CANVAS.height = BEST_CANVAS.width * (IMAGE.height / IMAGE.width);
+
+        // Resize to 50%
+        var oc = document.createElement('canvas'), octx = oc.getContext('2d');
+
+        oc.width = IMAGE.width * 0.75;
+        oc.height = IMAGE.height * 0.75;
+        octx.drawImage(IMAGE, 0, 0, oc.width, oc.height);
+
+        // Resize image
+        octx.drawImage(oc, 0, 0, oc.width * 0.5, oc.height * 0.5);
+        var nx = oc.width * 0.5, ny = oc.height * 0.5;
+        var newWidth = BEST_CANVAS.width/factor, newHeight = BEST_CANVAS.height/factor;
+
+        // Resize to final size
+        TARGET_CANVAS.width = newWidth;
+        TARGET_CANVAS.height = newHeight;
+        TARGET_CTX.drawImage(oc, 0, 0, nx, ny, 0, 0, BEST_CANVAS.width/factor, BEST_CANVAS.height/factor);
+
+        return {width: BEST_CANVAS.width/factor, height: BEST_CANVAS.height/factor};
+      }
+
+    </script>
+  </body>
+</html>
