@@ -84,7 +84,7 @@
           <button id="restart" type="button" class="btn btn-light btn-lg panelbtns" onclick="javascript:location.reload()">
             R E S T A R T
           </button>
-          <button type="button" class="btn btn-info" data-toggle="popover" data-content="1. Choose a shape (default: circle.<br/ >2. Choose an image (JPEG, PNG, etc.) OR take a picture.<br/ >3. Select the number of shapes (default: 50). <br/ >4. START!" id="help">
+          <button type="button" class="btn btn-info" data-toggle="popover" data-content="1. Choose a shape (default: circle)<br/ >2. Choose an image (JPEG, PNG, etc.) OR take a picture.<br/ >3. Select the number of shapes (default: 50). <br/ >4. START!" id="help">
             <i class="fas fa-question"></i>
           </button>
         </div>
@@ -117,43 +117,42 @@
       var DNA_BEST = [];
       var DNA_TEST = [];
       var GEN = 0;
-      var SHAPE = "circle";
+      var SHAPE = "triangle";
       var SHAPE_COUNT = 50;
       var changeIndex = 0;
 
       // IMAGE CAPTURE VARIABLES
       var width = 320;
       var height = 0;
-      var video = document.getElementById("video");
+      var video = $("#video").get(0);
       var canvas = document.createElement("CANVAS");
       var streaming = false;
-      var capturemode = document.getElementById("capturemode");
-      var takepic = document.getElementById("capture");
-      var photo = document.getElementById("photo");
-      var cameradiv = document.getElementsByClassName("camera")[0];
+      var capturemode = $("#capturemode").get(0);
+      var takepic = $("#capture").get(0);
+      var photo = $("#photo").get(0);
+      var cameradiv = $(".camera").first().get(0);
 
       // ALGORITHM HTML ELEMENT COUNTERPARTS
-      var slider = document.getElementById("rangeslider");
-      var popsize = document.getElementById("output");
+      var slider = $("#rangeslider").get(0);
+      var popsize = $("#output").get(0);
       var IMAGE = document.createElement("IMG");
-      var TARGET_CANVAS = document.getElementById("targetimg");
+      var TARGET_CANVAS = $("#targetimg").get(0);
       var TEST_CANVAS = document.createElement("CANVAS");
-      var BEST_CANVAS = document.getElementById('best');
-      var LIVE_FITNESS = document.getElementById("fitness");
-      var ORIGINAL = document.getElementById("targetimg");
+      var BEST_CANVAS = $('#best').get(0);
+      var LIVE_FITNESS = $("#fitness").get(0);
+      var ORIGINAL = $("#targetimg").get(0);
 
       var BEST_CTX = BEST_CANVAS.getContext('2d');
       var TEST_CTX = TEST_CANVAS.getContext('2d');
       var TARGET_CTX = TARGET_CANVAS.getContext('2d');
       var ORIGINAL_CTX = ORIGINAL.getContext('2d');
 
-      timer.addEventListener('secondsUpdated', function (e) {
+      timer.addEventListener('secondsUpdated', (e) => {
         document.getElementById("time").innerHTML = timer.getTimeValues().toString();
       });
 
-      slider.addEventListener('input', function () {
+      slider.addEventListener('input', () => {
         popsize.innerHTML = slider.value;
-        console.log(slider.value);
       }, false);
 
       function start() {
@@ -189,32 +188,23 @@
           // Initialised population of both canvases
           DNA_BEST = evo.initDna(SHAPE, SHAPE_COUNT, SIZE);
           DNA_TEST = evo.initDna(SHAPE, SHAPE_COUNT, SIZE);
-          for(var j = 0; j < DNA_BEST.length; j++) {
+          for(let j = 0; j < DNA_BEST.length; j++) {
             evo.passGeneMutation(DNA_BEST, DNA_TEST, SHAPE, j);
           }
 
-          document.getElementById("evostats").style.display = "block";
+          $("#evostats").css('display', 'block');
 
           timer.start();
           ID = setInterval(evolve, 0);
 
           // Hide buttons upon starting the program
-          var start = document.getElementById("start");
-          var shape = document.getElementById("shapediv");
-          var imageselect = document.getElementById("imageselect");
-          var shapeselect = document.getElementById("shapediv");
-          var imagecapture = document.getElementById("imagecapture");
-          var chooseimage = document.getElementById("chooseimage");
-          var popcontrol = document.getElementById("popcontrol");
-          var restart = document.getElementById("restart");
-          shapeselect.style.display = "none";
-          imageselect.style.display = "none";
-          start.style.display = "none";
-          shape.style.display = "none";
-          imagecapture.style.display = "none";
-          chooseimage.style.display = "none";
-          popcontrol.style.display = "none";
-          restart.style.marginLeft = "2em";
+          $('#start').css('display', 'none');
+          $('#shapediv').css('display', 'none');
+          $('#imageselect').css('display', 'none');
+          $('#imagecapture').css('display', 'none');
+          $('#chooseimage').css('display', 'none');
+          $('#popcontrol').css('display', 'none');
+          $('#restart').css('margin-left', '2em');
 
           // Dynamically adds the save button to the page
           addSaveButton();
@@ -223,26 +213,24 @@
 
       // Changes the value of the target image every time a new image is selected
       function onChange(event) {
-        var file = event.target.files[0];
-        var reader = new FileReader();
-        reader.onload = function(event) {
-          console.log(file.name);
+        const file = event.target.files[0];
+        let reader = new FileReader();
+        reader.onload = (event) => {
           IMAGE.src = reader.result;
         };
 
         reader.readAsDataURL(file);
 
         // Set the value of the image button to the name of the image file
-        var imgbtn = document.getElementById("chooseimage");
-        imgbtn.innerHTML = file.name;
+        let imgbtn = $("#chooseimage");
+        imgbtn.html(file.name);
         imgbtn.click();
       }
 
       // Set the value of the SHAPE variable & Set the value of the shape button to the shape type
       function shapeChange(shape_id) {
-        console.log(shape_id);
         SHAPE = shape_id;
-        document.getElementById("shape").innerHTML = shape_id.charAt(0).toUpperCase() + shape_id.slice(1);
+        $("#shape").html(shape_id.charAt(0).toUpperCase() + shape_id.slice(1));
       }
 
       function evolve() {
@@ -266,10 +254,10 @@
       }
 
       // Event listener for image capture mode (webcam)
-      capturemode.onclick = function() {
-        BEST_CANVAS.style.display = "none";
+      capturemode.onclick = () => {
+        TARGET_CANVAS.style.display = "none";
         cameradiv.style.display = "inline-block";
-        document.getElementById("target").disabled = true;
+        $("#target").get(0).disabled = true;
         setVideoParams();
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: false })
@@ -283,59 +271,59 @@
       };
 
       // Event listener for camera button
-      takepic.onclick = function() {
+      takepic.onclick = () => {
         height = video.videoHeight / (video.videoWidth/width);
         takepicture();
         unsetVideoParams();
-        BEST_CANVAS.style.display = "inline-block";
+        TARGET_CANVAS.style.display = "inline-block";
         cameradiv.style.display = "none";
         stopStreamedVideo(video);
-        var imgbtn = document.getElementById("chooseimage");
-        imgbtn.innerHTML = "Image captured";
+        let imgbtn = $("#chooseimage");
+        imgbtn.html("Image captured");
         imgbtn.click();
       }
 
       // Makes the canvas used for image capture blank if dimensions can't be ascertained
-      function clearphoto() {
-        var context = canvas.getContext('2d');
+      clearphoto = () => {
+        let context = canvas.getContext('2d');
         context.fillStyle = "#AAA";
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        var data = canvas.toDataURL('image/png');
+        let data = canvas.toDataURL('image/png');
         IMAGE.setAttribute('src', data);
       }
 
       // Captures & parses image taken by webcam
-      function takepicture() {
-        var context = canvas.getContext('2d');
+      takepicture = () => {
+        let context = canvas.getContext('2d');
         if (width && height) {
           canvas.width = width;
           canvas.height = height;
           context.drawImage(video, 0, 0, width, height);
 
-          var data = canvas.toDataURL('image/png');
+          let data = canvas.toDataURL('image/png');
           IMAGE.setAttribute('src', data);
         } else {
           clearphoto();
         }
       }
 
-      function setVideoParams() {
+      setVideoParams = () => {
         video.style.width = "320px";
         video.style.height = "240px";
         cameradiv.style.width = "340px";
       }
 
-      function unsetVideoParams() {
+      unsetVideoParams = () => {
         video.style.width = "0px";
         video.style.height = "0px";
         cameradiv.style.width = "0px";
       }
 
       // Stops connection between program and camera once image has been captured
-      function stopStreamedVideo(videoElem) {
-        var stream = videoElem.srcObject;
-        var tracks = stream.getTracks();
+      stopStreamedVideo = (videoElem) => {
+        const stream = videoElem.srcObject;
+        const tracks = stream.getTracks();
 
         tracks.forEach(function(track) {
           track.stop();
@@ -345,12 +333,12 @@
       }
 
       // Adds the save button to the page
-      function addSaveButton() {
-        var link = document.createElement('a');
+      addSaveButton = () => {
+        let link = document.createElement('a');
         link.innerHTML = 'Save image';
         link.className = "btn btn-success";
 
-        var icon = document.createElement('i');
+        let icon = document.createElement('i');
         icon.className = "fa fa-download";
         icon.style.marginLeft = "0.25em";
 
@@ -364,17 +352,17 @@
       }
 
       // Disables camera button if file browser selected
-      function disableCaptureBtn() {
+      disableCaptureBtn = () => {
         document.getElementById("capturemode").disabled = true;
       }
 
       // Resizes image to a factor of the original size and returns an object with target image's dimensions
-      function resizeImage(factor) {
+      resizeImage = (factor) => {
         // Set size proportional to image
         BEST_CANVAS.height = BEST_CANVAS.width * (IMAGE.height / IMAGE.width);
 
         // Resize to 50%
-        var oc = document.createElement('canvas'), octx = oc.getContext('2d');
+        let oc = document.createElement('canvas'), octx = oc.getContext('2d');
 
         oc.width = IMAGE.width * 0.75;
         oc.height = IMAGE.height * 0.75;
@@ -382,8 +370,8 @@
 
         // Resize image
         octx.drawImage(oc, 0, 0, oc.width * 0.5, oc.height * 0.5);
-        var nx = oc.width * 0.5, ny = oc.height * 0.5;
-        var newWidth = BEST_CANVAS.width/factor, newHeight = BEST_CANVAS.height/factor;
+        let nx = oc.width * 0.5, ny = oc.height * 0.5;
+        let newWidth = BEST_CANVAS.width/factor, newHeight = BEST_CANVAS.height/factor;
 
         // Resize to final size
         TARGET_CANVAS.width = newWidth;
