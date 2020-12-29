@@ -4,6 +4,6 @@ Originally created as a desktop application, using Electron, my final year proje
   
 ![image](https://github.com/sam-adefioye/project-images/blob/master/evo_gif.gif)  
 
-You can find an online version of the program **[here](https://bit.ly/EvolutionaryArt)**.
+You can find an online version of the program **[here](https://evolutionary-art.herokuapp.com)**.
 
 The webcam worked on the desktop version as a source of input, but, doesn't seem to work in this version, so it has been disabled for now.
