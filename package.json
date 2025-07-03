@@ -18,9 +18,9 @@
   "dependencies": {
     "body-parser": "^1.20.1",
     "ejs": "^3.1.10",
-    "cookie-parser": "~1.4.4",
+    "cookie-parser": "~1.4.7",
     "express": "^5.1.0",
-    "express-session": "~1.15.6",
+    "express-session": "~1.18.1",
     "browserify": "^16.5.0",
     "easytimer": "^1.1.1",
     "random-normal": "^1.0.0",
